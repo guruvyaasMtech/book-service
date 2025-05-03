@@ -1,26 +1,21 @@
 package com.libManager.book_service.model;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+import java.io.Serializable; // Import Serializable
 
 @Entity
-public class Book {
-
+@Table(name = "books")
+public class Book implements Serializable { // Implement Serializable
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String title;
     private String author;
     private String isbn;
     private Integer publicationYear;
     private Integer totalCopies;
 
-    // Default constructor (required by JPA)
-    public Book() {
-    }
+    // Constructors, getters, and setters
+    public Book() {}
 
     public Book(String title, String author, String isbn, Integer publicationYear, Integer totalCopies) {
         this.title = title;
@@ -30,7 +25,7 @@ public class Book {
         this.totalCopies = totalCopies;
     }
 
-    // Getters and setters for all fields
+
     public Long getId() {
         return id;
     }
