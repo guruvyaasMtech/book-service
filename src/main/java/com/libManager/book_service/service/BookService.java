@@ -1,49 +1,37 @@
 package com.libManager.book_service.service;
 
+
+import com.libManager.book_service.events.BookCreatedEvent;
 import com.libManager.book_service.model.Book;
 import com.libManager.book_service.repository.BookRepository;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.Optional;
 
 @Service
 public class BookService {
-
-    private final BookRepository bookRepository;
-
     @Autowired
-    public BookService(BookRepository bookRepository) {
-        this.bookRepository = bookRepository;
+    private BookRepository bookRepository;
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+    private final String BOOK_EXCHANGE = "book.exchange";
+    private final String BOOK_CREATED_ROUTING_KEY = "book.created";
+
+
+    @Transactional
+    public Book createBook(Book book) {
+        Book savedBook = bookRepository.save(book);
+        BookCreatedEvent event = new BookCreatedEvent(
+                savedBook.getId(), savedBook.getTitle(), savedBook.getAuthor(), savedBook.getIsbn());
+        rabbitTemplate.convertAndSend(BOOK_EXCHANGE, BOOK_CREATED_ROUTING_KEY, event.getBookId());
+        return savedBook;
     }
 
-    public List<Book> getAllBooks() {
-        return bookRepository.findAll();
-    }
 
     public Optional<Book> getBookById(Long id) {
         return bookRepository.findById(id);
-    }
-
-    public Optional<Book> getBookByIsbn(String isbn) {
-        return bookRepository.findByIsbn(isbn);
-    }
-
-    public void addBook(Book book) {
-        // Add any business logic here, e.g., checking if a book with the same ISBN already exists
-        bookRepository.save(book);
-    }
-
-    public void updateBook(Long id, Book updatedBook) {
-        Optional<Book> existingBook = bookRepository.findById(id);
-        existingBook.ifPresent(book -> {
-            updatedBook.setId(book.getId()); // Ensure the ID is set for updating
-            bookRepository.save(updatedBook);
-        });
-        // You might want to handle the case where the book doesn't exist
-    }
-
-    public void deleteBook(Long id) {
-        bookRepository.deleteById(id);
     }
 }
